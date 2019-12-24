@@ -1,695 +1,287 @@
 #include<stdio.h>
 #include<stdlib.h>
-#include<malloc.h>
-#include<string>
-#include<iostream>
-#include<conio.h>
-
-#define Link_Size 100
-
-int NUM,C,N;
-
-typedef struct list
+#include<string.h>
+#define STRING_MAXSIZE 256   //定义串的长度
+#define ERR_NOMEMORY -1
+char source_str[STRING_MAXSIZE]; //将文件内资源以字符串存于此变量
+int len;    //存储原始字符串的长度
+//定义数据存储的结构，以链结构存储
+typedef struct LNode
 {
-    char data[80];
-    int length;
-    struct list *next;
-    struct list *pre;
-    int row;
-} LinkList;
-
-int initlist(Sqlist *L)  //顺序表的初始化
-
-LinkList *CreatWord()    //文本的输入
+    char data;
+    struct LNode *next;
+} LNode,*LinkList;
+LinkList L = 0;         //定义全局变量字符串的起始指针
+void   menu();          //菜单显示函数，显示菜单，无传递参数，
+//接调用
+LinkList Init(char Init_str);  //初始化函数，将资源转化为所定义的连//式结构，传入参数为所要初始化的文本，//返回值为LinkList类型的头指针。
+int Input(char input_string[]); //插入函数，在默认在文本末尾插入文本，//传入参量为所要插入的文本信息，返回//值为修改后的文本信息。
+void Output();  //输出函数，输出文本所包含的信息，无//传入参量，无返回值
+int Search(char search_str[]);  //查找函数，查找相应的字符串函数传入//参量为指定的查找文本信息，返回查找//到的参数。
+void Replace(char bereplaced_str[],char replace_str[]);                      //替换函数，替换相应文本信息，传入参//量为被替换的文本信息，以及替换的文//本信息。
+void Insert(char insert_str[],int location);
+//插入函数，在指定位置插入指定信息，//传入参量为需要插入的文本信息，以及//插入的相关位置。
+void Move(char bemoved_str[],int location);
+//块移动函数，将文本信息中的指定信息//移动到指定位置，传入参量为需要移动//的文本块以及指定的移动位置。
+void Delete(char delete_str[]);        //删除函数，删除相应的文本信息，传入//参数为指定的被删除的文本
+void Display(int len_dis);    //显示函数，传入参量为所要显示的文本//长度。
+void save();    //存盘函数，将所改变的文本存入到磁盘//中，无传入参数，无返回参数
+void delay();       //延时函数
+int StringLength( LinkList S );  //求串长函数，传入参数为要求的串的长//度，返回参数为文本的长度
+void statistics();            //统计行数，无传入参数，无返回值。
+void KMPGetNext(char *T,int n2,int nextval[]);
+int KMPIndex(char *S,int n1,char *T,int n2); //KMP算法，求文本的位置
+void KMPGetNext(char *T,int n2,int nextval[])
+//求子串T的next函数修正值并存入数组nextval
 {
-    LinkList *temp;
-    char ch;
-    int i,j;
-    head->next=(LinkList *)malloc(sizeof(LinkList));
-    head->pre=NULL;
-
-    temp=head->next;
-    temp->pre=null;
-    temp->length=0;
-
-    for(i=0; i<80; i++)
-        temp->data[i]='\0';//初始化初值
-
-    printf("开始创建文本，请输入文章（输入#号结束）：\n");
-    for(j=0; j<Link_Size; j++)
+    int j=1,k=0;
+    nextval[0]=-1;
+    while(j<n2)
     {
-        for(i=0; i<80; i++)
+        if(k==0||T[k]==T[j])
         {
-            ch=getchar();
-            temp->data[i]=ch;
-            temp->length++;
-            if(ch=='#')
-            {
-                NUM=j;
-                break;
-            }
+            nextval[j]=T[k]==T[j]?nextval[k]:k;
+            j++;
+            k++;
         }
-        if(ch=='#')
-        {
-            temp->length=i;
-            temp->next=NULL;
-            break;
-        }
-        temp->next=(LinkList *)malloc(sizeof(LinkList));
-        temp->next->pre=temp;
-        temp=temp->next;
-        for(i=0; i<80; i++)
-            temp->data[i]='\0';
+        else
+            k=nextval[k];
     }
-    temp->row=NULL+1;
-    system("cls");
-    return temp;
-
 }
-void PrintWord()//文本输出函数
-
+int KMPIndex(char *S,int n1,char *T,int n2)
+//利用子串T的next函数求T在主串S中的位置
 {
-
-    int i,j;
-
-    LinkList *p;
-
-    p=head->next;
-
-    system("cls");
-
-    //HeadWord();
-
-    printf("\n当前文章的内容是:");
-
-    for(j=0; j<=NUM&&p!=NULL; j++)
-
+    int i=0,j=0;
+    int *next=(int *)malloc(n2*sizeof(int));
+    if(!next)
+        return ERR_NOMEMORY ;
+    KMPGetNext(T,n2,next);
+    while(i<n1&&j<n2)
     {
-
-        for(i=0; (i<80)&&(p->data[i])!='#'; i++)
-
+        if(j==-1||S[i]==T[j])            //继续比较后继字符
         {
-
-            printf("%c",p->data[i]);
-
+            i++;
+            j++;
         }
-
+        else                            //模式串向右移动
+            j=next[j];
+    }
+    free(next);
+    return (j>=n2?i-n2:-1);
+}
+int Search(char search_str[])
+{
+    char s[STRING_MAXSIZE];
+    int i=0;
+    int search_loc,search_len,s_len;
+    LNode *p;
+    p=L->next;
+    while(p)                                //获取修改后的文本信息
+    {
+        s[i++]=p->data;
         p=p->next;
-
     }
-
-}
-
-void ReplaceWord(char *shr1,LinkList* temp)//文本的替换函数
-{
-    char Date1[20],Date2[20];
-    int i,j,k=0,sum=0;
-    int i=1;
-    temp=head->next;
-    strcpy(Date1,str1);//被替换内容的赋值
-    strcpy(Date2,str2);//替换内容的赋值
-
-    for(i=0; i<=NUM; i++)
-
+    s_len=strlen(s);
+    search_len=strlen(search_str);
+    if(search_len <= s_len)
     {
-
-        for(j=0; j<80; j++)
-
-        {
-
-            if((temp->data[j])==Data1[k])
-                k++;
-
-            else if(Data1[k]!='\0')
-
-            {
-
-                j=j-k;
-
-                k=0;
-
-            }
-
-            if(Data1[k]=='\0')
-
-            {
-                int n;
-                n=j-k+1;
-                for(m=0; m<sizeof(str2); k++)
-                {
-                    temp->data[n]=Date2[m];//替换值
-                    n++;
-                }
-
-                l++;
-
-                k=0;
-
-                continue;
-            }
-
-        }
-
-        temp=temp->next;
-
+        search_loc = KMPIndex(s,s_len,search_str,search_len);        //利用KMP算法获取查找的位置
+        return search_loc;
     }
-    printf("替换后的文本内容如下：\n")；
-    PrintWord();
-}
-void SearchWord(char *str1,LinkList* temp)//文本内容查找函数
-
-{
-
-    char Data[20] ;
-
-    int i,j,k=0,sum=0;
-
-    int l=1;
-
-    temp=head->next;
-
-    strcpy(Data,str1);
-
-
-    for(i=0; i<=NUM; i++)
-
-    {
-
-        for(j=0; j<80; j++)
-
-        {
-
-            if((temp->data[j])==Data[k])
-                k++;
-
-            else if(Data[k]!='\0')
-
-            {
-
-                j=j-k;
-
-                k=0;
-
-            }
-
-            if(Data[k]=='\0')
-
-            {
-
-                sum++;
-
-                j=j-k+1;
-
-                printf("\t\t第%d次出现在第%d行第%d列\n",l,i+1,j+1);
-
-                l++;
-
-
-                k=0;
-
-                continue;
-            }
-
-        }
-
-        temp=temp->next;
-
-    }
-
-    printf("\t\t\t字符串总共出现次数为:%d\n\n",sum);
-
-    C=sum;
-
-    N=i*80+j;
-
-}
-void DeleteWord(char *str2)//文本内容删除函数
-
-{
-    char Data[20];
-
-    LinkList *temp,*term;
-
-    int i,j,k,m,y,num;
-
-    strcpy(Data,str2);
-
-    for(y=0; y<C; y++)
-
-    {
-
-        num=80;
-
-        k=0,m=0;
-
-        temp=head;
-
-        for(i=0; i<=NUM; i++)
-
-        {
-
-            term=temp;
-
-            temp=temp->next;
-
-            for(j=0; j<80; j++)
-
-            {
-
-                if((temp->data[j])==Data[k])
-                    k++;
-
-                else if(Data[k]!='\0')
-                {
-                    j=j-k;
-                    k=0;
-                }
-
-                if(Data[k]=='\0')
-
-                {
-
-                    num=j;
-
-                    break;
-
-                }
-
-            }
-
-            if(num<80)
-                break;
-
-        }
-
-        for(; i<=NUM; i++)
-
-        {
-
-            for(; j<80; j++)
-
-            {
-
-                if(j+1<k)
-
-                {
-
-                    term->data[80-k+num]=temp->data[j+1];
-
-                }
-
-                else
-
-                    temp->data[j-k+1]=temp->data[j+1];
-
-            }
-
-            term=temp;
-
-            temp=temp->next;
-
-            j=0;
-
-        }
-
-    }
-
-
-}
-LinkList * InsertWord(LinkList *temp)//文本内容插入函数
-
-{
-
-    char Data[20];
-
-    int h,l;
-
-
-    printf("\n\t\t请输入要插入的字符或字符串:");
-
-    getchar();
-
-    gets(Data);
-
-    printf("\n\t\t当前文章内容为:");
-
-    PrintWord();
-
-    printf("\n\t\t请输入要插入的行:");
-
-    scanf("%d",&h);
-
-    printf("\n\t\t请输入要插入的列:");
-
-    scanf("%d",&l);
-
-    int i=(h-1)*80+l;
-
-    LinkList *a;
-
-    int n=strlen(Data);
-
-    int m ;
-
-    int insertRow=i/80+1;
-
-    int row=temp->row;
-
-    int j;
-
-    if(insertRow==row)
-
-    {
-
-        for(m=temp->length-1; m>=(i%80)&&n>0; m--)
-
-            temp->data[m+n]=temp->data[m];
-
-        for(m=(i%80),j=0; m<n+(i%80); m++,j++)
-
-        {
-
-            temp->data[m]=Data[j];
-
-        }
-
-    }
-
     else
-
     {
-
-        int r=0;
-
-        for(int p=insertRow; p<row; p++)
-
+        return -1;                            //未找到
+    }
+}
+int Replace(char replaced_str[],char replace_str[])
+{
+    int j=0;
+    int replaced_str_loc,replaced_str_len,reped_len,source_str_len;
+    LNode *p,*s,*z,*w;
+    replaced_str_len = strlen(replaced_str);  //被替换的字符的长度
+    reped_len = strlen(replace_str);          //需要替换的字符的长度
+    source_str_len = strlen(source_str);      //主串字符的长度
+    replaced_str_loc = Search(replaced_str);  //被替换的字符的位置
+    if(replaced_str_loc != -1)
+    {
+        LTmp = Init(replace_str);
+        p = L;
+        s = L;
+        z = LTmp->next;
+        w = LTmp;
+        for(j = 0; j < replaced_str_loc; j++)
+            p = p->next;
+        for(j = 0; j < (replaced_str_loc + replaced_str_len); j++)
+            s = s->next;
+        for(j = 0; j < reped_len; j++)
+            w = w->next;
+        p->next = z;
+        w->next = s->next;
+        Display();
+        return 0;
+    }
+    else
+    {
+        printf("**************************************\n");
+        printf("* 主银！！您所被替换的文本不存在哦~~*\n");
+        printf("**************************************\n");
+    }
+}
+void Insert(char insert_str[],int location)
+{
+    int i,j,len_ins,source_str_len;
+    LNode *p,*s;
+    len_ins = strlen(insert_str);
+    source_str_len = strlen(source_str);
+    if((location <= source_str_len)&&(location >= 0))
+    {
+        p=L;
+        j=0;
+        for(i=0; i<len_ins; i++)                  //插入的次数
         {
-
-            if(p == insertRow)
-
-                r=0;
-
+            while(p&&j<location)
+            {
+                p=p->next;
+                j++;
+            }
+            s=(LinkList)malloc(sizeof(LNode));    //生成新结点
+            s->data=insert_str[i];
+            s->next=p->next;
+            p->next=s;
+            p=p->next;
+        }
+        len_ins=strlen(source_str)+len_ins;
+        Display();
+    }
+    else
+    {
+        ……;
+    }
+}
+void  Move(char bemoved_str[],int location)
+{
+    int j,bemoved_str_loc = 0,bemoved_str_len = 0,source_str_len;
+    LNode *p,*s,*w,*temp;
+    bemoved_str_loc = Search(bemoved_str) + 1;
+    bemoved_str_len = strlen(bemoved_str);
+    source_str_len = strlen(source_str);
+    if((bemoved_str_loc) > 0)
+    {
+        if((location <= source_str_len)&&(location >= 0))
+        {
+            p = L;
+            s = L;
+            w = L;
+            for(j = 0; j < bemoved_str_loc-1; j++)
+            {
+                p = p->next;
+            }
+            temp = p->next;
+            for(j = 0; j < (bemoved_str_loc + bemoved_str_len-1); j++)
+                s = s->next;
+            for(j = 0; j < location; j++)
+                w = w->next;
+            p->next = s->next;
+            s->next = w->next;
+            w->next = temp;
+            Display();
+        }
+        else
+        {
+            ……;
+        }
+    }
+    else
+    {
+        ……;
+    }
+}
+void Delete(char delete_str[])
+{
+    int loc;            //记录要删除的文本的位置
+    int i,j=0;
+    int len_del;
+    LNode *p,*q;
+    p=L;
+    len_del=strlen(delete_str);
+    loc=Search(delete_str)+1;
+    if((loc - 1) >= 0)
+    {
+        for(i=0; i<len_del; i++)      //要删除的结点的个数
+        {
+            while(p->next&&j<loc-1)    //寻找第loc[i]个元素，并令p指向其前驱
+            {
+                p=p->next;
+                j++;
+            }
+            q=p->next;                    //删除结点
+            if(q->next->data== 10)
+                q=q->next;
+            p->next=q->next;
+        }
+        len=strlen(source_str)-len_del;
+        Display();
+    }
+    else
+    {
+        ……;
+    }
+}
+void OpenFile()
+{
+    char ch,meng[33];
+    int i = 0,flag = 1,copy_num;
+    FILE *fp1;
+    printf("你猜你要输入什么样儿滴文本路径(我看这个不错f:\\1.txt) \n");
+    scanf("%s",way);
+    if((fp1=fopen(way,"r"))==NULL)
+    {
+        while(flag)
+        {
+            printf("总统大人，您的文件不在磁盘里呢，是不是在U盘,再¨来一遍!\n");
+            scanf("%s",way);
+            fp1 = fopen(way,"r");
+            if(fp1 != NULL)
+                flag = 0;
             else
-
-                r=n;
-
-
-            for(m=temp->length-1-r; m>=0&&n>0; m--)
-
-                temp->data[m+n]=temp->data[m];
-
-            a=temp;
-
-            temp = temp->pre;
-
-            temp->length = 80;
-
-            for(m = temp->length-n,j=0; m<temp->length; m++,j++)
-
-                a->data[j]=temp->data[m];
-
-        }
-
-        for(m=temp->length-n-1; m>=(i%80); m--)
-
-            temp->data[m+n]=temp->data[m];
-
-        for(m=(i%80),j=0; m<(i%80)+n; m++,j++)
-
-            temp->data[m] =Data[j];
-
-
-    }
-
-    return temp;
-
-}
-
-void FileSave()//文件存入函数
-{
-    LinkList *s;
-    s=head->next;
-
-    FILE *fpWrite=fopen("data.txt","w");//数据存入文件
-    if(fpWrite==NULL)
-    {
-        return 0;
-    }
-    for(j=0; j<Link_Size; j++)
-    {
-        for(i=0; i<80; i++)
-        {
-            j=s->data[i];
-            fprintf(fpWrite,"%d ",j);
+                flag = 1;
         }
     }
-    fclose(fpWrite);
-    printf("数据已存入到文件中！\n");
-
-}
-
-void FileRead()//文件的读取
-{
-    LinkList *r;
-    r=head->next;
-
-    FILE *fpRead=fopen("data.txt","r");
-
-    if(fpRead==NULL)
-
+    if((fp1=fopen(way,"r")) != NULL)
     {
-        return 0;
-    }
-
-    for(j=0; j<Link_Size; j++)
-    {
-        for(i=0; i<80; i++)
+        while(!feof(fp1))
         {
-        fscanf(fpRead,"%d ",&s->date[i]);
-        printf("%d ",s->date[i]);
+            ch = fgetc(fp1);
+            source_str[i++] = ch;
+        }
+        source_str[i] = '\0';
+        for(i = 0; i < strlen(source_str)-1; i++)
+            source_str[i] = source_str[i];
+        source_str[i] = '\0';
+        for(copy_num = 0; copy_num < STRING_MAXSIZE; copy_num ++)
+            changed_source_str[copy_num] = source_str[copy_num];
+        printf("我已经把他印在脑海里了！给你看下一个画面,不要捉急...\n");
+        delay();
+        fclose(fp1);
+        system( "cls" ) ;
+        menu();
     }
-
-    printf("数据已从文件中读取成功！\n");
-    getchar();//等待
 }
-
-}
-
-
-
-
-
-void main()
+void delay()
 {
-    printf("\t\t\t*************************************************************\t\t\t\n");
-    printf("\t\t\t*                                                           *\n");
-    printf("\t\t\t*                       文 本 编 译 器                      *\n");
-    printf("\t\t\t*                                                           *\n");
-    printf("\t\t\t*************************************************************\t\t\t\n");
-    printf("\t\t\t*                    可 执 行 如 下 操 作                   *\n");
-    printf("\t\t\t*************************************************************\t\t\t\n");
-    printf("\t\t\t* {1}：文本的输入    \t\t\t    {2}：文本的修改 *        \n");
-    printf("\t\t\t* {3}：文本的删除    \t\t\t    {4}：文本的查找 *        \n");
-    printf("\t\t\t* {5}：文本的替换    \t\t\t    {6}：文本的插入 *        \n");
-    printf("\t\t\t* {7}：文本的移动    \t\t\t    {8}：文本的输出 *        \n");
-    printf("\t\t\t* {9}：文件的存入    \t\t\t    {10}：文件的读取 *        \n");
-    printf("\t\t\t*************************************************************\t\t\t\n");
-    printf("\t\t\t提示：如果您是第一次使用文本编译器请选择第一选项进行内容的输入！\n");
-    printf("\t\t\t请输入您的选择：\n");
-    scanf("%d",&a);
-
-    switch(a)
-
-    {
-
-    case 1:
-
-        system("cls");
-
-        CreatWord();
-
-        printf("\t\t\t请输入需要编译的文本内容:\n");
-
-        getchar();
-
-        gets(str1);
-
-        SearchWord(str1,temp);
-
-        printf("按回车键继续·····");
-
-        getchar();
-
-        getchar();
-
-        system("cls");
-
-        break;
-
-    /*case 2:
-
-        system("cls");
-
-    修改函数
-
-        printf("\t\t\t请选择您输入修改的字符或字符串:");
-
-        getchar();
-
-        gets(str2);
-
-        SearchWord(str2,temp);
-
-        DeleteWord(str2);
-
-        printf("\t\t\t修改后的文章为:",str2);
-
-        PrintWord();
-
-        printf("按回车键继续·····");
-
-        getchar();
-
-        getchar();
-
-        system("cls");
-
-        break;*/
-
-    case 3:
-
-        system("cls");
-
-        DeleteWord(temp);
-
-        printf("\t\t\t修改后的文章为:");
-
-        PrintWord();
-
-        printf("按回车键继续·····");
-
-        getchar();
-
-        getchar();
-
-        system("cls");
-
-        break;
-
-    case 4:
-
-        system("cls");
-
-        SearchWord()
-
-        printf("按回车键继续·····");
-
-        getchar();
-
-        getchar();
-
-        system("cls");
-
-        break;
-
-    case 5:
-
-        system("cls");
-
-        ReplaceWord();
-
-        printf("按回车键继续·····");
-
-        getchar();
-
-        getchar();
-
-        system("cls");
-
-        break;
-
-    case 6:
-
-        system("cls");
-
-        InsertWord();
-
-        printf("按回车键继续·····");
-
-        getchar();
-
-        getchar();
-
-        system("cls");
-
-        break;
-
-    /*case 7://文本的移动
-
-        system("cls");
-
-        SearchWord()
-
-        printf("按回车键继续·····");
-
-        getchar();
-
-        getchar();
-
-        system("cls");
-
-        break;
-*/
-    case 8:
-
-        system("cls");
-
-        PrintWord()；
-
-        printf("按回车键继续·····");
-
-        getchar();
-
-        getchar();
-
-        system("cls");
-
-        break;
-
-    case 9://文件的存入
-
-        system("cls");
-
-        FileRead();
-
-        printf("按回车键继续·····");
-
-        getchar();
-
-        getchar();
-
-        system("cls");
-
-        break;
-
-
-    case 10://文件的读取
-
-        system("cls");
-
-        FileRead();
-
-        printf("按回车键继续·····");
-
-        getchar();
-
-        getchar();
-
-        system("cls");
-
-        break;
-
-
-    }
-
+    int i,j;
+    for(i = 0; i < 55000; i++)
+        for(j = 0; j < 11000; j++);
+}
+void save()
+{
+    FILE * fp2;
+    fp2=fopen(way,"w");
+    fprintf (fp2,"%s",changed_source_str);
+    fclose (fp2);
+}
+int main()
+{
+
+    return 0;
 }
