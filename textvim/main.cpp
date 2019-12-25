@@ -17,7 +17,7 @@ void Mainmenu();          //主菜单
 void menu1();                //文件录入方式菜单
 void menu2();               //文本内容处理菜单
 void menu_move();          //移动菜单 
-
+int Index_BF(struct line *info,char *);
 //定义结构体
 struct line
 {
@@ -44,19 +44,20 @@ void PrintWord()
 		printf("\n\t\t第%d行|%s",p->num,p->text);
 		p = p->next;
 	}
+	//这是只有一行的输出
 	printf("\n\t\t第%d行|%s",last->num,last->text);
-		printf("\n");
+	printf("\n");
 }
 //把文本文件的内容读到线性表中
 void file_load()
 {
-	struct line *info,*temp;                 //行指针，info指向当前行，temp指向info的前驱行 
+	struct line *info,*temp;   //行指针，info指向当前行，temp指向info的前驱行 
 	char ch;
 	temp = NULL;
-	int linenum,i;							   //行计数器,行字符数组下标 
-	FILE *fp;                             //文件指针 
+	int linenum,i=0;	   //行计数器,行字符数组下标 
+	FILE *fp;          //文件指针 
 	char name[20];
-	printf("请输入要打开文件名字（例如c:\\a.txt）");
+	printf("请输入要打开文件名字（例如c:\a.txt）");
 	scanf("%s",name);		
 	while ((fp=fopen(name,"r"))==NULL)
 	{
@@ -106,7 +107,7 @@ void scanf_load()
 	FILE *fp;                                 //文件指针 
 	temp = NULL;
 	start = (struct line*)malloc(sizeof(struct line));     //生成一行的结点空间 
-	info = start;
+	info = start;//当前是第一行
 	linenum = 1;
 	printf("\t\t请从键盘录入文本(输入时回车换行，输入结束后在新的一行输入#结束录入)\n\t\t"); 
 	while((ch = getchar()) !='#')
@@ -114,33 +115,23 @@ void scanf_load()
 			i = 0;
 			info->text[i] = ch;
 			i++;
-			while((ch = getchar()) != '\n')      //从文件中读到一行字符到线性表中 
-			{
-				
+			while((ch = getchar()) != '\n')      //从键盘读到一行字符到线性表中 
+			{				
 				info->text[i] = ch;
-				i++;
-			
-			}
-	printf("\t\t");		
-	info->text[i] = '\0';
-	info->num = linenum++;
-	info->next = (struct line*)malloc(sizeof(struct line));
-	if (!info->next)
-	{
-		printf("\n\t\t内存不足"); 
-		getchar();
-		exit(0);
-	}
-	info->prior = temp;
-	temp = info;
-	info = info->next;
- 	} 
+				i++;			
+			}//此循环结束表明第一行输入结束，然后执行下面的代码
+		printf("\t\t");		
+		info->text[i] = '\0';
+		info->num = linenum++;//开辟第二行
+		info->next = (struct line*)malloc(sizeof(struct line));//下一行分配空间
+		info->prior = temp;
+		temp = info;//当前行赋给前驱行
+		info = info->next;//下一行赋给当前行
+ 	} //输入结束了
  	temp->next = NULL;
  	last = temp;
  	free(info);
  	start->prior = NULL;
- 
- 
 }
 
 //文件保存
@@ -171,7 +162,24 @@ void save()
         fclose(fp);
 		printf("\n文件保存成功\n");	
 
-} 
+}
+//BF算法
+int Index_BF(struct line *info,char *str){
+	int i=1,j=1;
+	//printf("test\n");
+	while(i<=strlen(info->text)&&j<=strlen(str)){//两串均未达到末尾
+		if(info->text[i]==str[j]){
+			++i;++j;//继续比较
+		}else{
+		i=i-j+2;j=1;//指针后腿重新匹配
+		}
+	}
+	//printf("2test\n");
+	if(j>strlen(str))
+		return i-strlen(str);//匹配成功
+	else
+		return 0;//匹配失败
+}
 
  //查找字符串 
 void findstr(){
@@ -183,15 +191,20 @@ void findstr(){
 	gets(str);
 	printf("\t\t|>>________________________________________________<<|\n");
   	struct line *info;
-	int i = 0, find_len, found = 0, position;
-	char substring[MAX];
+	//int i = 0, find_len, found = 0, position;
+	//char substring[MAX];
 	info = start;
-	int find_num = 0;             //匹配到的次数 
-	find_len = strlen(str);
+	//int find_num = 0;             //匹配到的次数 
+	//find_len = strlen(str);
 	while (info)   //查询
 	{	
-		
-		i = 0;  //行间循环
+		//下面采用BF算法实现字符串匹配
+		if(Index_BF(info,str))
+			printf("\t\t出现在%d行%d列\n",info->num,Index_BF(info,str));
+		else
+			printf("\t\t内容不存在\n");
+
+		/*i = 0;  //行间循环
 		while (i <= (strlen(info->text) - find_len))  //行内查找循环
 		{	int k=0;
 			
@@ -208,13 +221,13 @@ void findstr(){
 				found = 1;
 			}
 				i++;
-		}
+		}*/
 		info = info->next;
 	}
-	if (found)  //查找成功
+	/*if (found)  //查找成功
 		printf("\t\t|\t\t该内容出现的总次数为%d\n",find_num);
 	else   //查找不成功
-		printf("\t\t该内容不存在\n");
+		printf("\t\t该内容不存在\n");*/
 	printf("\t\t|>>________________________________________________<<|\n");
 	
 }
@@ -543,17 +556,16 @@ void menu2()
 	int a;
 while(1)
 {	
-	printf("\n\t\t ____________________________________________________\n");
-	printf("\t\t|			    文章内容处理菜单                     |\n");
-	printf("\t\t|____________________________________________________|\n");
-	printf("\t\t|---->  1、查找字符或字符串							 |\n");
-	printf("\t\t|---->  2、删除字符或字符串						     |\n");
-	printf("\t\t|---->  3、插入字符或字符串	 				         |\n");
-	printf("\t\t|---->  4、移动字符或字符串						     |\n");
-	printf("\t\t|---->  5、替换字符或字符串						     |\n");
-	printf("\t\t|---->  6、返回主菜单                                |\n");
-	printf("\t\t|---->  7、直接退出系统                              |\n");
-	printf("\t\t|____________________________________________________|\n");
+
+	printf("\t\t___________________\n");
+	printf("\t\t1、查找字符或字符串\n");
+	printf("\t\t2、删除字符或字符串\n");
+	printf("\t\t3、插入字符或字符串\n");
+	printf("\t\t4、移动字符或字符串\n");
+	printf("\t\t5、替换字符或字符串\n");
+	printf("\t\t6、返回主菜单      \n");
+	printf("\t\t7、直接退出系统    \n");
+	printf("\t\t___________________\n");
 	printf("\t\t    请选择:");
 	scanf("%d",&a);
 	switch(a)
@@ -570,7 +582,7 @@ while(1)
 	   case 2:
 	         system("cls"); 
 	         
-	         printf("\t\t|    1:删除一行文字    2:删除莫一行,莫列，定长的内容|\n\t\t");
+	         printf("\t\t|    1:删除一行文字    2:删除某一行,某列，定长的内容|\n\t\t");
 	         int delete_choice;
              scanf("%d",&delete_choice);
              getchar();
