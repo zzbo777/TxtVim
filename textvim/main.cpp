@@ -1,287 +1,725 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#define STRING_MAXSIZE 256   //定义串的长度
-#define ERR_NOMEMORY -1
-char source_str[STRING_MAXSIZE]; //将文件内资源以字符串存于此变量
-int len;    //存储原始字符串的长度
-//定义数据存储的结构，以链结构存储
-typedef struct LNode
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define MAX 240
+#define NOT_FOUND -1
+//函数声明    
+void PrintWord(void);    //输出文本的内容 
+void scanf_load();       //从键盘录入文本 
+void file_load();        //把文本文件的内容读到线性表中
+void findstr();          //查找字符串 
+void delete1(int linenum);//删除一行
+void delete2(int linenum,int position,int lenth);//删除莫一行,莫列，定长的内容 
+void insert1();           // 插入一行文字
+void insert2(char str[], int linenum, int position);//插入文字到文本莫一行莫一列
+void replace();          //替换
+void Mainmenu();          //主菜单
+void menu1();                //文件录入方式菜单
+void menu2();               //文本内容处理菜单
+void menu_move();          //移动菜单 
+
+//定义结构体
+struct line
 {
-    char data;
-    struct LNode *next;
-} LNode,*LinkList;
-LinkList L = 0;         //定义全局变量字符串的起始指针
-void   menu();          //菜单显示函数，显示菜单，无传递参数，
-//接调用
-LinkList Init(char Init_str);  //初始化函数，将资源转化为所定义的连//式结构，传入参数为所要初始化的文本，//返回值为LinkList类型的头指针。
-int Input(char input_string[]); //插入函数，在默认在文本末尾插入文本，//传入参量为所要插入的文本信息，返回//值为修改后的文本信息。
-void Output();  //输出函数，输出文本所包含的信息，无//传入参量，无返回值
-int Search(char search_str[]);  //查找函数，查找相应的字符串函数传入//参量为指定的查找文本信息，返回查找//到的参数。
-void Replace(char bereplaced_str[],char replace_str[]);                      //替换函数，替换相应文本信息，传入参//量为被替换的文本信息，以及替换的文//本信息。
-void Insert(char insert_str[],int location);
-//插入函数，在指定位置插入指定信息，//传入参量为需要插入的文本信息，以及//插入的相关位置。
-void Move(char bemoved_str[],int location);
-//块移动函数，将文本信息中的指定信息//移动到指定位置，传入参量为需要移动//的文本块以及指定的移动位置。
-void Delete(char delete_str[]);        //删除函数，删除相应的文本信息，传入//参数为指定的被删除的文本
-void Display(int len_dis);    //显示函数，传入参量为所要显示的文本//长度。
-void save();    //存盘函数，将所改变的文本存入到磁盘//中，无传入参数，无返回参数
-void delay();       //延时函数
-int StringLength( LinkList S );  //求串长函数，传入参数为要求的串的长//度，返回参数为文本的长度
-void statistics();            //统计行数，无传入参数，无返回值。
-void KMPGetNext(char *T,int n2,int nextval[]);
-int KMPIndex(char *S,int n1,char *T,int n2); //KMP算法，求文本的位置
-void KMPGetNext(char *T,int n2,int nextval[])
-//求子串T的next函数修正值并存入数组nextval
-{
-    int j=1,k=0;
-    nextval[0]=-1;
-    while(j<n2)
-    {
-        if(k==0||T[k]==T[j])
-        {
-            nextval[j]=T[k]==T[j]?nextval[k]:k;
-            j++;
-            k++;
-        }
-        else
-            k=nextval[k];
-    }
+	char text[MAX];      //该行的内容 
+	int num;                 //用来记录行号
+	struct line *prior;      //用来指向前一行
+	struct line *next;       //用来指向下一行
+ };
+struct line *start;          //指向线性表的第一行
+struct line *last;           //指向线性表的最后一行
+
+//主函数 
+int main()
+{	
+	Mainmenu();
+	return 0;	
 }
-int KMPIndex(char *S,int n1,char *T,int n2)
-//利用子串T的next函数求T在主串S中的位置
+// 	输出链表的内容 
+void PrintWord()
 {
-    int i=0,j=0;
-    int *next=(int *)malloc(n2*sizeof(int));
-    if(!next)
-        return ERR_NOMEMORY ;
-    KMPGetNext(T,n2,next);
-    while(i<n1&&j<n2)
-    {
-        if(j==-1||S[i]==T[j])            //继续比较后继字符
-        {
-            i++;
-            j++;
-        }
-        else                            //模式串向右移动
-            j=next[j];
-    }
-    free(next);
-    return (j>=n2?i-n2:-1);
+	struct line *p = start;
+	while(p != last)
+	{
+		printf("\n\t\t第%d行|%s",p->num,p->text);
+		p = p->next;
+	}
+	printf("\n\t\t第%d行|%s",last->num,last->text);
+		printf("\n");
 }
-int Search(char search_str[])
+//把文本文件的内容读到线性表中
+void file_load()
 {
-    char s[STRING_MAXSIZE];
-    int i=0;
-    int search_loc,search_len,s_len;
-    LNode *p;
-    p=L->next;
-    while(p)                                //获取修改后的文本信息
-    {
-        s[i++]=p->data;
-        p=p->next;
+	struct line *info,*temp;                 //行指针，info指向当前行，temp指向info的前驱行 
+	char ch;
+	temp = NULL;
+	int linenum,i;							   //行计数器,行字符数组下标 
+	FILE *fp;                             //文件指针 
+	char name[20];
+	printf("请输入要打开文件名字（例如c:\\a.txt）");
+	scanf("%s",name);		
+	while ((fp=fopen(name,"r"))==NULL)
+	{
+			printf("\n打开文件失败，请重新输入要打开的文件名：");
+			scanf("%s",name);
     }
-    s_len=strlen(s);
-    search_len=strlen(search_str);
-    if(search_len <= s_len)
-    {
-        search_loc = KMPIndex(s,s_len,search_str,search_len);        //利用KMP算法获取查找的位置
-        return search_loc;
-    }
-    else
-    {
-        return -1;                            //未找到
-    }
+	start = (struct line*)malloc(sizeof(struct line));     //生成一行的结点空间 
+	info = start;
+	linenum = 1;
+	
+	while((ch = fgetc(fp)) != EOF)
+	{     
+			i = 0;
+			info->text[i] = ch;
+			i++;
+			while((ch = fgetc(fp)) != '\n')      //从文件中读到一行字符到线性表中 
+			{	
+				info->text[i] = ch;
+				i++;
+			}
+	info->num = linenum++;
+	info->next = (struct line*)malloc(sizeof(struct line));
+	if (!info->next)
+	{
+		printf("\n\t\t内存不足"); 
+		getchar();
+		exit(0);
+	}
+
+	temp = info;
+	info = info->next;
+	info->prior = temp;
+ 	} 
+ 	last = info->prior;
+ 	printf("\t\t文件读入完毕\n"); 
+ 	fclose(fp);
+ 	
 }
-int Replace(char replaced_str[],char replace_str[])
-{
-    int j=0;
-    int replaced_str_loc,replaced_str_len,reped_len,source_str_len;
-    LNode *p,*s,*z,*w;
-    replaced_str_len = strlen(replaced_str);  //被替换的字符的长度
-    reped_len = strlen(replace_str);          //需要替换的字符的长度
-    source_str_len = strlen(source_str);      //主串字符的长度
-    replaced_str_loc = Search(replaced_str);  //被替换的字符的位置
-    if(replaced_str_loc != -1)
-    {
-        LTmp = Init(replace_str);
-        p = L;
-        s = L;
-        z = LTmp->next;
-        w = LTmp;
-        for(j = 0; j < replaced_str_loc; j++)
-            p = p->next;
-        for(j = 0; j < (replaced_str_loc + replaced_str_len); j++)
-            s = s->next;
-        for(j = 0; j < reped_len; j++)
-            w = w->next;
-        p->next = z;
-        w->next = s->next;
-        Display();
-        return 0;
-    }
-    else
-    {
-        printf("**************************************\n");
-        printf("* 主银！！您所被替换的文本不存在哦~~*\n");
-        printf("**************************************\n");
-    }
+
+//从键盘录入文本 
+void scanf_load()
+{	
+	struct line *info,*temp;                 //行指针，info指向当前行，temp指向info的前驱行 
+	char ch;
+	temp = NULL;
+	int linenum,i;							   //行计数器,行字符数组下标 
+	FILE *fp;                                 //文件指针 
+	temp = NULL;
+	start = (struct line*)malloc(sizeof(struct line));     //生成一行的结点空间 
+	info = start;
+	linenum = 1;
+	printf("\t\t请从键盘录入文本(输入时回车换行，输入结束后在新的一行输入#结束录入)\n\t\t"); 
+	while((ch = getchar()) !='#')
+	{
+			i = 0;
+			info->text[i] = ch;
+			i++;
+			while((ch = getchar()) != '\n')      //从文件中读到一行字符到线性表中 
+			{
+				
+				info->text[i] = ch;
+				i++;
+			
+			}
+	printf("\t\t");		
+	info->text[i] = '\0';
+	info->num = linenum++;
+	info->next = (struct line*)malloc(sizeof(struct line));
+	if (!info->next)
+	{
+		printf("\n\t\t内存不足"); 
+		getchar();
+		exit(0);
+	}
+	info->prior = temp;
+	temp = info;
+	info = info->next;
+ 	} 
+ 	temp->next = NULL;
+ 	last = temp;
+ 	free(info);
+ 	start->prior = NULL;
+ 
+ 
 }
-void Insert(char insert_str[],int location)
-{
-    int i,j,len_ins,source_str_len;
-    LNode *p,*s;
-    len_ins = strlen(insert_str);
-    source_str_len = strlen(source_str);
-    if((location <= source_str_len)&&(location >= 0))
-    {
-        p=L;
-        j=0;
-        for(i=0; i<len_ins; i++)                  //插入的次数
-        {
-            while(p&&j<location)
-            {
-                p=p->next;
-                j++;
-            }
-            s=(LinkList)malloc(sizeof(LNode));    //生成新结点
-            s->data=insert_str[i];
-            s->next=p->next;
-            p->next=s;
-            p=p->next;
-        }
-        len_ins=strlen(source_str)+len_ins;
-        Display();
-    }
-    else
-    {
-        ……;
-    }
-}
-void  Move(char bemoved_str[],int location)
-{
-    int j,bemoved_str_loc = 0,bemoved_str_len = 0,source_str_len;
-    LNode *p,*s,*w,*temp;
-    bemoved_str_loc = Search(bemoved_str) + 1;
-    bemoved_str_len = strlen(bemoved_str);
-    source_str_len = strlen(source_str);
-    if((bemoved_str_loc) > 0)
-    {
-        if((location <= source_str_len)&&(location >= 0))
-        {
-            p = L;
-            s = L;
-            w = L;
-            for(j = 0; j < bemoved_str_loc-1; j++)
-            {
-                p = p->next;
-            }
-            temp = p->next;
-            for(j = 0; j < (bemoved_str_loc + bemoved_str_len-1); j++)
-                s = s->next;
-            for(j = 0; j < location; j++)
-                w = w->next;
-            p->next = s->next;
-            s->next = w->next;
-            w->next = temp;
-            Display();
-        }
-        else
-        {
-            ……;
-        }
-    }
-    else
-    {
-        ……;
-    }
-}
-void Delete(char delete_str[])
-{
-    int loc;            //记录要删除的文本的位置
-    int i,j=0;
-    int len_del;
-    LNode *p,*q;
-    p=L;
-    len_del=strlen(delete_str);
-    loc=Search(delete_str)+1;
-    if((loc - 1) >= 0)
-    {
-        for(i=0; i<len_del; i++)      //要删除的结点的个数
-        {
-            while(p->next&&j<loc-1)    //寻找第loc[i]个元素，并令p指向其前驱
-            {
-                p=p->next;
-                j++;
-            }
-            q=p->next;                    //删除结点
-            if(q->next->data== 10)
-                q=q->next;
-            p->next=q->next;
-        }
-        len=strlen(source_str)-len_del;
-        Display();
-    }
-    else
-    {
-        ……;
-    }
-}
-void OpenFile()
-{
-    char ch,meng[33];
-    int i = 0,flag = 1,copy_num;
-    FILE *fp1;
-    printf("你猜你要输入什么样儿滴文本路径(我看这个不错f:\\1.txt) \n");
-    scanf("%s",way);
-    if((fp1=fopen(way,"r"))==NULL)
-    {
-        while(flag)
-        {
-            printf("总统大人，您的文件不在磁盘里呢，是不是在U盘,再¨来一遍!\n");
-            scanf("%s",way);
-            fp1 = fopen(way,"r");
-            if(fp1 != NULL)
-                flag = 0;
-            else
-                flag = 1;
-        }
-    }
-    if((fp1=fopen(way,"r")) != NULL)
-    {
-        while(!feof(fp1))
-        {
-            ch = fgetc(fp1);
-            source_str[i++] = ch;
-        }
-        source_str[i] = '\0';
-        for(i = 0; i < strlen(source_str)-1; i++)
-            source_str[i] = source_str[i];
-        source_str[i] = '\0';
-        for(copy_num = 0; copy_num < STRING_MAXSIZE; copy_num ++)
-            changed_source_str[copy_num] = source_str[copy_num];
-        printf("我已经把他印在脑海里了！给你看下一个画面,不要捉急...\n");
-        delay();
-        fclose(fp1);
-        system( "cls" ) ;
-        menu();
-    }
-}
-void delay()
-{
-    int i,j;
-    for(i = 0; i < 55000; i++)
-        for(j = 0; j < 11000; j++);
-}
+
+//文件保存
 void save()
 {
-    FILE * fp2;
-    fp2=fopen(way,"w");
-    fprintf (fp2,"%s",changed_source_str);
-    fclose (fp2);
-}
-int main()
-{
+    system("cls");
+	FILE *fp;
+    line *info=start;
+	int i=0;
+    char name[20];
+	printf("\n请输入保存地址(例如: c:\\a.txt):");
+	scanf("%s",name);
+		while ((fp=fopen(name,"w+"))==NULL)
+		{
+			printf("文件不存在，请重新输入文件名：");
+			scanf("%s",name);
+		} 
+	while(info)
+	{   
+        while(info->text[i]!='\n')  
+		{fprintf(fp,"%c",info->text[i]);
+		 i++;
+		}
+		info = info->next;
+		i = 0;
+	}
+	    
+        fclose(fp);
+		printf("\n文件保存成功\n");	
 
-    return 0;
+} 
+
+ //查找字符串 
+void findstr(){
+
+	PrintWord();
+	char str[MAX];
+	getchar();
+	printf("\t\t 输入想要查找的字符串：");
+	gets(str);
+	printf("\t\t|>>________________________________________________<<|\n");
+  	struct line *info;
+	int i = 0, find_len, found = 0, position;
+	char substring[MAX];
+	info = start;
+	int find_num = 0;             //匹配到的次数 
+	find_len = strlen(str);
+	while (info)   //查询
+	{	
+		
+		i = 0;  //行间循环
+		while (i <= (strlen(info->text) - find_len))  //行内查找循环
+		{	int k=0;
+			
+			for(int j=i;j<i+find_len;j++)   // 行内的字符串从第一个开始按定长find_len赋给substring 
+			{	
+				substring[k] = info->text[j]; 
+				k++;
+			}
+			if (strcmp(substring,str) == 0)
+			{	
+				find_num++;
+			
+				printf("\t\t|第%d次出现在：%d行%d列\n",find_num,info->num,(i+1+1)/2);
+				found = 1;
+			}
+				i++;
+		}
+		info = info->next;
+	}
+	if (found)  //查找成功
+		printf("\t\t|\t\t该内容出现的总次数为%d\n",find_num);
+	else   //查找不成功
+		printf("\t\t该内容不存在\n");
+	printf("\t\t|>>________________________________________________<<|\n");
+	
+}
+
+//删除一行
+void delete1(int line_num)
+{	
+	struct line * info, *p;
+	info = start;
+	while ((info->num < line_num) && info)  //寻找要删除的行 
+		info = info->next;
+	if (info == NULL)
+		printf("该行不存在");
+	else
+	{
+		p = info->next;     //指向要删除的行后面一行 
+		if (start == info) //如果删除的是第一行
+		{
+			start = info->next;
+			if (start)  //如果删除后，不为空
+				start->prior = NULL;
+			else  //删除后为空
+				last = NULL;
+		}
+		else
+		{
+			info->prior->next = info->next;  //指定行的上一行指向指定行的下一行
+			if (info != last) //如果不是最后一行
+				info->next->prior = info->prior;  //修改其下一行的指向头的指针 
+			else  //如果是最后一行，修改尾指针
+				last = info->prior;
+		}
+		free(info);
+		while (p) //被删除行之后的行号减一 
+		{
+			p->num = p->num - 1;
+			p = p->next;
+		}
+
+	}
+
+}
+
+//删除莫一行,莫列，定长的内容 
+void delete2(int line_num,int position,int lenth)
+{	
+	
+	struct line *info=start;
+	char rest_str[MAX];
+	if(line_num == 1)
+	info = start;
+	else
+	for(int i=1;i<line_num;i++)     	 //让info指向删除内容所在行 
+	info = info->next;      
+	if (info == NULL)
+		printf("该行没有字符！n");
+	else
+	{
+		if (strlen(info->text) <= (position + lenth))  //本行的字符长度<=待删除的列号+删除长度，直接在当前位置插入'\0'
+			info->text[position] = '\0';
+		else
+		{	int i;
+			for(i = position-1;info->text[i+lenth]!='\0';i++)
+			info->text[i]=info->text[i+lenth];
+			info->text[i]='\0';
+		}
+	}
+}
+
+
+// 插入一行文字
+void insert1()
+{	
+	int linenum; 
+	printf("\t\t输入插入位置的行号：");
+	scanf("%d", &linenum);
+	struct line * info, * q, * p;
+	p = start;
+	q = NULL;
+
+	while (p && p->num != linenum)               
+	{
+		q = p;				//插入行前面一行 
+		p = p->next;	   //插入行后面一行
+	}
+
+	if (p == NULL && (q->num + 1) != linenum)	//指定行不存在，不能插入
+	{
+		printf("\t\t输入的行号不存在");
+	}
+
+	else // 指定行存在，进行插入
+	{
+		info = (struct line *)malloc(sizeof(struct line));
+		printf("\t\t输入要插入的字符串:");
+		scanf("%s", info->text);
+		info->num = linenum;
+		if (linenum == 1)  			  //插入在第一行
+		{
+			info->next = p;
+			p->prior = info;
+			info->prior = NULL;
+			start = info;
+		}
+
+		else if (q->num != linenum)  //插入在最后一行
+		{
+			q->next = info;
+			info->next = p;
+			info->prior = q;
+		}
+
+		else     //插入在其他行
+		{
+			q->next = info;
+			info->next = p;
+			p->prior = info;
+			info->prior = q;
+		}
+
+		while (p)   //如果不是插入在最后一行，插入行后面的行号都加1
+		{
+			p->num = p->num + 1;
+			p = p->next;
+		}
+
+	}
+
+}
+
+//插入文字到文本莫一行莫一列
+void insert2(char str[], int linenum, int position)
+{
+	
+	struct line * info;
+	int len, i;
+	int lenth;
+	char rest_str[MAX],kongge[2] = { " " };
+	info = start;
+	while (info && info->num != linenum)   //查询要插入的行
+	{
+		info = info->next;
+	}
+	if (info == NULL)
+		printf("不存在该行！\n");
+	else if (position < 0)
+		printf("不存在该列！\n");
+	else    //如果行和列都存在，则进行插入
+	{
+		lenth = strlen(info->text);
+		if (lenth < position)	//插入列大于本行文件列数
+		{
+			len = position - lenth - 1;
+			for (i = 0; i < len; i++)
+			strcat(info->text, kongge);   //将空余的部分插入空格符
+			strcat(info->text, str);    //插入字符到列的未尾
+		}
+
+		else   //插入列在本行文字的中间
+		{
+			strcpy(rest_str, &info->text[position - 1]);
+			strcpy(&info->text[position - 1], str);
+			strcat(info->text, rest_str);
+		}
+	}
+} 
+ 
+//替换
+void replace()
+{
+	PrintWord();
+	char str[MAX];
+	printf("\t\t输入想要替换的字符串：\t\t");
+	scanf("%s",&str);
+	char replace[MAX]; 
+	printf("\t\t替换为："); 
+	scanf("%s",&replace);
+  	struct line *info;
+	int i = 0, find_len, found = 0, position;
+	char bijiao[MAX];
+	info = start;
+	int find_num = 0;             //匹配到的次数 
+	find_len = strlen(str);
+	while (info)   //查询
+	{	
+		
+		i = 0;  //行间循环
+		while (i <= (strlen(info->text) - find_len))  //行内查找循环
+		{	int k=0;
+			
+			for(int j=i;j<i+find_len;j++)   // 行内的字符串从第一个开始按定长find_len赋给substring 
+			{	
+				bijiao[k] = info->text[j]; 
+				k++;
+			}
+			if (strcmp(bijiao,str) == 0)
+			{	
+				find_num++;
+				delete2(info->num,i+1,find_len);
+				insert2(replace,info->num,i+1);
+				found = 1;
+			}
+				i++;
+		}
+		info = info->next;
+	}
+	if (found)  //查找成功
+		printf("\t\t该内容替换的总次数为%d\n",find_num);
+	else   //查找不成功
+		printf("\t\t该内容不存在\n");
+	printf("\t\t经过替换后的内容为：\n");
+	PrintWord();
+	
+	
+ } 
+
+//文件录入方式菜单
+void menu1()
+{	
+	printf("\t\t|请选择录入方式    1：从键盘输入     2：从文件录入   |\n\t\t");
+	int i;
+	scanf("%d",&i);
+	getchar();
+		if(i>2||i<1)    
+	{   
+		printf("\t\t对不起，请输入正确的功能序号!\n");
+	}
+	switch(i)
+	{
+		case 1:
+			scanf_load();
+			system("cls"); 
+			break;
+		case 2:
+			file_load();
+			system("cls"); 
+			break;				 
+ 	} 
+}
+
+//移动菜单 
+void menu_move()
+{	
+	
+	int choice;
+	printf("\n\t\t|______________移动操作___________________|\n");
+	printf("\n\t|----->1.      向下移动一行         <-----------|\n");
+	printf("\t\t|----->2.      向上移动一行         <-----------|\n");
+	printf("\t\t|----->3.      向右移动一列         <-----------|\n");
+	printf("\t\t|----->4.      向左移动一列         <-----------|\n");
+	printf("\t\t|----->5.      返回上级菜单         <-----------|\n");
+	printf("\t\t请选择");
+	scanf("%d",&choice); 
+	int line_num,number;
+	char str[2];
+	switch (choice)
+			{
+			case 1:   // 向下移动一行
+				
+				printf("\t\t输人要移动的字符串所在行号：");
+				scanf("%d", &line_num);
+				struct line *info,*p;                    //新建一行空行 
+				info = (struct line *)malloc(sizeof(struct line));
+				info->text[0] = ' ';
+				info->text[1] = '\0';
+				info->num = line_num;
+				if (line_num == 1)    //插入在首行
+				{	
+					info->next = start;
+					start->prior = info;
+					start = info;
+					start->prior = NULL;
+					p=start->next;
+				}
+				else  //插入在其他行
+		        {
+		       	p=start;
+		    	while (p->num != line_num)
+					p = p->next;                    //令p指向插入行 
+				info->next=p;
+				info->prior=p->prior;
+				p->prior->next=info;
+				p->prior = info;}
+				while (p)   //插入行后面的行号都加1
+				 {
+					p->num = p->num + 1;
+					p = p->next;
+				 }
+				break;
+			case 2:   //向上移动一行
+				printf("\t\t输入要移动的字符串所在行号：");
+				scanf("%d",&line_num);
+				delete1(line_num-1);
+				break;
+			case 3:   //向右移动一列
+				printf("\t\t输人要移动的字符串所在行号：");
+				scanf("%d", &line_num);
+				printf("\t\t输入要移动的字符串所在列号：");
+				scanf("%d", &number);
+				str[0] = ' ';
+				str[1] = '\0';
+				insert2(str, line_num, number);
+				break;
+			case 4:   //向左移动
+				printf("\t\t输入要移动的字符串所在行号：");
+				scanf("%d", &line_num);
+				printf("\t\t输入要移动的字符串所在列号：");
+				scanf("%d", &number);
+				if (number <= 0)
+					printf("\t\t该列不存在");
+				else
+					delete2(line_num, number - 2, 1);
+				break;
+			case 5:   //退出移动
+				break;
+
+} 
+	
+}
+
+//文本内容处理菜单
+void menu2()
+{  
+	char str1[20];
+	char str2[20];
+	int a;
+while(1)
+{	
+	printf("\n\t\t ____________________________________________________\n");
+	printf("\t\t|			    文章内容处理菜单                     |\n");
+	printf("\t\t|____________________________________________________|\n");
+	printf("\t\t|---->  1、查找字符或字符串							 |\n");
+	printf("\t\t|---->  2、删除字符或字符串						     |\n");
+	printf("\t\t|---->  3、插入字符或字符串	 				         |\n");
+	printf("\t\t|---->  4、移动字符或字符串						     |\n");
+	printf("\t\t|---->  5、替换字符或字符串						     |\n");
+	printf("\t\t|---->  6、返回主菜单                                |\n");
+	printf("\t\t|---->  7、直接退出系统                              |\n");
+	printf("\t\t|____________________________________________________|\n");
+	printf("\t\t    请选择:");
+	scanf("%d",&a);
+	switch(a)
+	{
+		case 1:   
+	       	 system("cls"); 
+	      	 
+         	 findstr();
+		  	 printf("\t\t按回车键继续·····");
+			 getchar();
+		   	 getchar();
+			 system("cls");
+		     break;
+	   case 2:
+	         system("cls"); 
+	         
+	         printf("\t\t|    1:删除一行文字    2:删除莫一行,莫列，定长的内容|\n\t\t");
+	         int delete_choice;
+             scanf("%d",&delete_choice);
+             getchar();
+             if(delete_choice == 1)
+           	{
+				   int linenum;
+				   printf("\t\t当前文本为：\n");
+				   PrintWord();
+           		   printf("\t\t请输入你删除行的行号：");
+			       scanf("%d",&linenum);
+				   getchar(); 
+           		   delete1(linenum);
+			}
+             else if(delete_choice == 2)
+			{
+				   int linenum, position,lenth;  //行，列，删除长度 
+				   printf("\t\t当前文本为：\n");
+				   PrintWord();
+			       printf("\t\t请输入要删除内容所在行，列，删除内容字节长度，中间用空格隔开\n");
+				   printf("\t\t--->注意：汉字占两个字节\n\t\t");
+				   scanf("%d %d %d",&linenum,&position,&lenth);
+				   position = (position*2)-1;
+				   getchar();
+				   delete2(linenum,position,lenth);
+			}
+            printf("\t\t删除后的文章为:\n");
+            PrintWord();
+		    printf("\t\t按回车键继续·····");
+			getchar();
+			getchar();
+			system("cls");
+		    break;
+      case 3:
+           
+	        system("cls"); 
+	        
+            printf("\t\t|   1:插入一行文字      2：插入文字到文本到一行的中间|\n\t\t");
+            int insert_choice;
+            scanf("%d",&insert_choice);
+            if(insert_choice == 1)
+            {
+            printf("\t\t当前文本为：\n");
+			PrintWord();
+			insert1();}
+            else
+           {
+           	printf("\t\t当前文本为：\n");
+			PrintWord();
+		    char str[MAX]; int linenum; int position;
+		    printf("\t\t输入插入位置一行号：");
+			scanf("%d", &linenum);
+			printf("\t\t输入插入位置-列号：");
+			scanf("%d", &position);
+			position = (position*2)-1;
+			printf("\t\t要插入的字符串：");
+			scanf("%s", str);
+			insert2(str,linenum,position);
+		   }
+           
+            printf("\t\t插入字符或字符串后文章为:\n");
+            PrintWord();
+		    printf("\t\t按回车键继续·····");
+			getchar();
+			getchar();
+			system("cls");
+		    break;
+	 case 4:
+		    system("cls");
+		    			
+		    menu_move();
+		    printf("\t\t移动后文本内容为：\n");
+			PrintWord();
+		    printf("\t\t按回车键继续·····");
+			getchar();
+			getchar();
+			system("cls");
+		    break;
+	 case 5: 
+		    system("cls"); 
+
+		    replace();
+		    printf("\t\t按回车键继续·····");
+			getchar();
+			getchar();
+			system("cls");
+	        break;
+	 case 6:
+		 system("cls");
+		 break;
+	 case 7:
+		 exit(0);
+     }       
+  }
+}
+//主菜单
+
+void Mainmenu()
+{	
+	int t;
+	while(1){
+	printf("\n");
+	printf("\t\t ____________________________________________________\n");
+	printf("\t\t|                 主菜单                             |\n");
+	printf("\t\t|                                                    |\n");
+	printf("\t\t|---->  1、输入文章内容                              |\n");
+	printf("\t\t|---->  2、进入文章内容处理菜单                      |\n");
+	printf("\t\t|---->  3、显示当前文章内容                          |\n");
+	printf("\t\t|---->  4、保存文本                                  |\n");
+	printf("\t\t|---->  5、退出文本编辑器                            |\n");
+	printf("\t\t|                                                    |\n");
+	printf("\t\t|    注：第一次运行本程序时请选择功能1               |\n");
+	printf("\t\t|____________________________________________________|\n");
+	printf("  \t\t  请选择:");
+	scanf("%d",&t);
+	if(t>5||t<1)
+	{   
+		printf("对不起，无此功能，请输入正确的功能序号!\n");
+	}
+	else
+	switch(t)
+	{  
+    	case 1:  
+		     system("cls"); 		     
+		     menu1();
+			 printf("\t\t按回车键继续·····");
+			 getchar();
+			 getchar();
+			 system("cls");
+             break;
+    	case 2:  
+		     system("cls"); 
+		     menu2();
+			 break;
+		case 3:
+		     system("cls"); 
+		     
+			 printf("\n\t\t ____________________文章内容为______________________\n");
+             PrintWord();
+			 printf("\n");
+			 printf("\t\t按回车键继续·····");
+			 getchar();
+			 getchar();
+			 system("cls");
+			 break;
+		case 4:	 
+		     save();
+		     break;
+		case 5:
+			break;
+	  }
+   }
 }
