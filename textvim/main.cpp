@@ -21,7 +21,7 @@ LinkList *head;
 void WellcomeWord()
 {
     system("cls"); //清屏操作，在include（stdlib）头文件中
-    printf("         欢迎使用简单的文本编辑器           \n");
+    printf("\t\t           欢迎使用简单的文本编辑器           \n\n");
 }
 LinkList *CreatWord()
 {
@@ -119,15 +119,17 @@ void CountWord()
     {
         printf("\n");
         WellcomeWord();
-        printf("              文章内容统计菜单              \n");
-        printf("         1、文章中大写字母的个数            \n");
-        printf("         2、文章中小写字母的个数            \n");
-        printf("         3、文章中数字的个数                \n");
-        printf("         4、文章中标点符号的个数            \n");
-        printf("         5、文章中空格的个数                \n");
-        printf("         6、文章中所有字数                  \n");
-        printf("         7、退出返回主菜单                  \n");
-        printf("请选择需统计项目:");
+        printf("\t\t**********************************************\n");
+        printf("\t\t*              文章内容统计菜单              *\n");
+        printf("\t\t*         1、文章中大写字母的个数            *\n");
+        printf("\t\t*         2、文章中小写字母的个数            *\n");
+        printf("\t\t*         3、文章中数字的个数                *\n");
+        printf("\t\t*         4、文章中标点符号的个数            *\n");
+        printf("\t\t*         5、文章中空格的个数                *\n");
+        printf("\t\t*         6、文章中所有字数                  *\n");
+        printf("\t\t*         7、退出返回主菜单                  *\n");
+        printf("\t\t**********************************************\n");
+        printf("\t\t请选择需统计项目: ");
         scanf("%d",&t);
         switch(t)
         {
@@ -467,20 +469,22 @@ void menu(LinkList *temp)
     {
         WellcomeWord();
         printf("\n");
-        printf("                 主菜单                     \n");
-        printf("        1、文章内容输入                     \n");
-        printf("        2、显示当前文章内容                 \n");
-        printf("        3、进入文章内容统计菜单             \n");
-        printf("        4、查找文章中的字符或者字符串           \n");
-        printf("        5、删除文章中的字符或者字符串           \n");
-        printf("        6、向文章中插入字符或者字符串           \n");
-        printf("        7、替换文章中的符串           \n");
-        printf("        8、移动文章中的符串           \n");
-        printf("        9、保存文件\n");
-        printf("       10、读取文件\n");
-        printf("       11、结束:");
-        printf("    注：第一次运行本程序时请选择1号功能     \n");
-        printf("    请选择:");
+        printf("\t\t***************************************************\n");
+        printf("\t\t*                 主菜单                          *\n");
+        printf("\t\t*        1、文章内容输入                          *\n");
+        printf("\t\t*        2、显示当前内容                          *\n");
+        printf("\t\t*        3、内容统计菜单                          *\n");
+        printf("\t\t*        4、查找字符或者字符串                    *\n");
+        printf("\t\t*        5、删除字符或者字符串                    *\n");
+        printf("\t\t*        6、插入字符或者字符串                    *\n");
+        printf("\t\t*        7、替换文章中的符串                      *\n");
+        printf("\t\t*        8、移动文章中的符串                      *\n");
+        printf("\t\t*        9、保存文件                              *\n");
+        printf("\t\t*       10、读取文件                              *\n");
+        printf("\t\t*       11、结束:                                 *\n");
+        printf("\t\t*    注：第一次运行本程序时请选择1号功能          *\n");
+        printf("\t\t***************************************************\n");
+        printf("    请选择: ");
         scanf("%d",&t);
         if((t>11)&&(t<1))
         {
@@ -619,7 +623,7 @@ void save()
 }
 void Open()
 {
-    ROW=0;
+    ROW=1;
     LinkList *temp;
     int i,j;
     head->next=(LinkList *)malloc(sizeof(LinkList));
@@ -646,10 +650,8 @@ void Open()
         printf("文本内容为：\n%s\n",ch);
     }
     //将ch数组的字符再保存到链表
-    for(j=0; j<Link_Size; j++)
-    {
-
-
+    /*for(j=0; j<Link_Size; j++)
+    {*/
         for(i=0; i<80; i++)
         {
             temp->data[i]=ch[i];
@@ -668,14 +670,14 @@ void Open()
         {
             temp->length=i;
             temp->next=NULL;
-            break;
+           // break;
         }
         temp->next=(LinkList *)malloc(sizeof(LinkList)) ;
         temp->next->pre=temp;
         temp=temp->next;
         for(i=0; i<80; i++)
             temp->data[i]='\0';
-    }
+    //}
     temp->row=NUM+1;
     //system("cls");
     fclose(fp);
