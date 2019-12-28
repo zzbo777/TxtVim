@@ -4,11 +4,13 @@
 #include <stdlib.h>
 #include <conio.h>//键盘上输入或输出预处理操作
 #include<windows.h>
+
 #define Link_Size 100
 int NUM,C,N,ROW;
 char filename[20];
 void save();
 void Open();
+void firstview();
 typedef struct list
 {
     char data[80];
@@ -77,7 +79,7 @@ void PrintWord()
     p=head->next;
     system("cls");
     WellcomeWord();
-    printf("\n当前文章的内容是:\n");
+    printf("\n当前文章的内容是:");
     for(j=0; j<=NUM&&p!=NULL; j++)
     {
         for(i=0; (i<80)&&(p->data[i])!='#'; i++)
@@ -341,7 +343,7 @@ LinkList * Replaceword(LinkList *temp)
     }
     return head;
 }
-LinkList * MoveWord(LinkList *temp)
+/*LinkList * MoveWord(LinkList *temp)
 {
     int row,pos;
     char *s=(char *)malloc(sizeof(char)*80);
@@ -405,7 +407,7 @@ LinkList * MoveWord(LinkList *temp)
             }
         }
     }
-}
+}*/
 LinkList * InsertWord(char *str1,LinkList *temp)
 {
     int h,q;
@@ -478,10 +480,10 @@ void menu(LinkList *temp)
         printf("\t\t*        5、删除字符或者字符串                    *\n");
         printf("\t\t*        6、插入字符或者字符串                    *\n");
         printf("\t\t*        7、替换文章中的符串                      *\n");
-        printf("\t\t*        8、移动文章中的符串                      *\n");
-        printf("\t\t*        9、保存文件                              *\n");
-        printf("\t\t*       10、读取文件                              *\n");
-        printf("\t\t*       11、结束:                                 *\n");
+        //printf("\t\t*        8、移动文章中的符串                      *\n");
+        printf("\t\t*        8、保存文件                              *\n");
+        printf("\t\t*        9、读取文件                              *\n");
+        printf("\t\t*       10、结束:                                 *\n");
         printf("\t\t*    注：第一次运行本程序时请选择1号功能          *\n");
         printf("\t\t***************************************************\n");
         printf("    请选择: ");
@@ -563,7 +565,7 @@ void menu(LinkList *temp)
                 getchar();
                 system("cls");
                 break;
-            case 8:
+            /*case 8:
                 system("cls");
                 WellcomeWord();
                 MoveWord(temp);
@@ -575,7 +577,7 @@ void menu(LinkList *temp)
                 getchar();
                 getchar();
                 system("cls");
-                break;
+                break;*/
             case 9:
                 save();
                 break;
@@ -591,6 +593,12 @@ void menu(LinkList *temp)
 }
 int main()
 {
+    HANDLE  g_ConsoleOutPut;
+    g_ConsoleOutPut =GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(g_ConsoleOutPut,\
+                           FOREGROUND_INTENSITY|FOREGROUND_GREEN);
+    SetConsoleTitle("简易文本编辑器");
+    firstview();
     head=(LinkList *)malloc(sizeof(LinkList));
     LinkList *temp;
     menu(temp);
@@ -683,4 +691,18 @@ void Open()
     fclose(fp);
 
 }
-
+void firstview(){
+    printf("\n\n\n\n\n\n\n\n\t\t\t\t\t\t\t\n");
+    printf("◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇\n");
+    printf("◇\t\t\t\t                                                             \t\t\t◇\n");
+    printf("◇\t\t\t\t                                                             \t\t\t◇\n");
+    printf("◇\t\t\t\t                                                             \t\t\t◇\n");
+    printf("◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇\n");
+    printf("\t\t\t\t\t按任意键进入文本编辑器\n");
+    printf("\t小组成员如下:\n    \t\
+        王臻 \n \t\
+        钟波 \n \t\
+       杨华泽 \n \t\
+       王晨旭");
+    getchar();
+}
